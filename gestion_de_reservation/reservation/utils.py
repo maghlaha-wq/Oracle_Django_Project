@@ -1,13 +1,14 @@
-from django.shortcuts import render
-from django.http import HttpResponse
 from datetime import date
-from django.db import connection
-from .utils import creer_utilisateur, creer_ressource, creer_reservation, creer_notification
 from .models import Utilisateur, Ressource, Reservation, Notification
+from django.db import connection
+
 # =============================================
 # Utilitaire pour récupérer NEXTVAL d'une séquence Oracle
 # =============================================
 def get_nextval_seq(seq_name):
+    """
+    Récupère la prochaine valeur d'une séquence Oracle
+    """
     with connection.cursor() as cursor:
         cursor.execute(f"SELECT {seq_name}.NEXTVAL FROM dual")
         return cursor.fetchone()[0]
@@ -16,6 +17,9 @@ def get_nextval_seq(seq_name):
 # Créer un utilisateur
 # =============================================
 def creer_utilisateur(nom, prenom, email, role):
+    """
+    Crée un utilisateur et retourne l'objet Utilisateur
+    """
     user_id = get_nextval_seq('seq_Utilisateur')
     user = Utilisateur(
         id_user=user_id,
@@ -31,6 +35,9 @@ def creer_utilisateur(nom, prenom, email, role):
 # Créer une ressource
 # =============================================
 def creer_ressource(nom_ressource, type_ressource, etat):
+    """
+    Crée une ressource et retourne l'objet Ressource
+    """
     ressource_id = get_nextval_seq('seq_Ressource')
     ressource = Ressource(
         id_ressource=ressource_id,
@@ -45,6 +52,9 @@ def creer_ressource(nom_ressource, type_ressource, etat):
 # Créer une réservation
 # =============================================
 def creer_reservation(id_user, id_ressource, date_debut, date_fin):
+    """
+    Crée une réservation pour un utilisateur et une ressource
+    """
     reservation_id = get_nextval_seq('seq_Reservation')
     user = Utilisateur.objects.get(id_user=id_user)
     ressource = Ressource.objects.get(id_ressource=id_ressource)
@@ -54,7 +64,7 @@ def creer_reservation(id_user, id_ressource, date_debut, date_fin):
         date_reservation=date.today(),
         date_debut=date_debut,
         date_fin=date_fin,
-        statut='EN_ATTENTE',
+        statut='EN_ATTENTE',  # par défaut
         id_user=user,
         id_ressource=ressource
     )
@@ -65,6 +75,9 @@ def creer_reservation(id_user, id_ressource, date_debut, date_fin):
 # Créer une notification
 # =============================================
 def creer_notification(type_notification, message, id_user, id_reservation=None):
+    """
+    Crée une notification pour un utilisateur et éventuellement une réservation
+    """
     notif_id = get_nextval_seq('seq_Notification')
     user = Utilisateur.objects.get(id_user=id_user)
     reservation = None
@@ -82,57 +95,3 @@ def creer_notification(type_notification, message, id_user, id_reservation=None)
     )
     notif.save()
     return notif
-
-
-
-# =============================================
-# Page pour créer une réservation via formulaire
-# =============================================
-def reserver(request):
-    message = ''
-    if request.method == 'POST':
-        try:
-            # Récupération des données du formulaire
-            id_user = int(request.POST.get('id_user'))
-            id_ressource = int(request.POST.get('id_ressource'))
-            date_debut = request.POST.get('date_debut')
-            date_fin = request.POST.get('date_fin')
-
-            # Convertir les dates en objets date
-            date_debut = date.fromisoformat(date_debut)
-            date_fin = date.fromisoformat(date_fin)
-
-            # Créer la réservation
-            reservation = creer_reservation(id_user, id_ressource, date_debut, date_fin)
-
-            # Créer une notification
-            notif = creer_notification(
-                type_notification='CONFIRMATION_RESERVATION',
-                message=f'Votre réservation {reservation.id_reservation} a été créée.',
-                id_user=id_user,
-                id_reservation=reservation.id_reservation
-            )
-
-            message = f"Réservation créée avec succès ! ID={reservation.id_reservation}"
-
-        except Exception as e:
-            message = f"Erreur : {str(e)}"
-
-    # Affichage du formulaire et du message
-    return render(request, 'reservation/reserver.html', {'message': message})
-
-
-# =============================================
-# Page pour afficher toutes les réservations
-# =============================================
-def lister_reservations(request):
-    reservations = Reservation.objects.all()
-    return render(request, 'reservation/lister_reservations.html', {'reservations': reservations})
-
-
-# =============================================
-# Page pour afficher toutes les notifications
-# =============================================
-def lister_notifications(request):
-    notifications = Notification.objects.all()
-    return render(request, 'reservation/lister_notifications.html', {'notifications': notifications})

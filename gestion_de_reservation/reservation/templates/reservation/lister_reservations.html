@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Liste des réservations</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+<div class="container mt-5">
+    <h2>Liste des réservations</h2>
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Utilisateur</th>
+                <th>Ressource</th>
+                <th>Date Début</th>
+                <th>Date Fin</th>
+                <th>Statut</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for res in reservations %}
+            <tr>
+                <td>{{ res.id_reservation }}</td>
+                <td>{{ res.id_user.nom }} {{ res.id_user.prenom }}</td>
+                <td>{{ res.id_ressource.nom_ressource }}</td>
+                <td>{{ res.date_debut }}</td>
+                <td>{{ res.date_fin }}</td>
+                <td>{{ res.statut }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+</body>
+</html>
